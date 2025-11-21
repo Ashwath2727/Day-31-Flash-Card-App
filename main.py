@@ -3,19 +3,23 @@ import tkinter as tk
 import pandas as pd
 
 BACKGROUND_COLOR = "#B1DDC6"
+to_learn = {}
+current_card = {}
 
 # ------------------- Taking data from csv ---------------
-french_words_data = pd.read_csv("data/french_words.csv")
-french_words_dict = french_words_data.to_dict(orient="records")
-print(french_words_dict)
-
-current_card = {}
+try:
+    data = pd.read_csv("data/words_to_learn.csv")
+except FileNotFoundError:
+    french_words_data = pd.read_csv("data/french_words.csv")
+    to_learn = french_words_data.to_dict(orient="records")
+else:
+    to_learn = data.to_dict(orient="records")
 
 def next_card():
     global current_card, flip_timer
     window.after_cancel(flip_timer)
 
-    current_card = random.choice(french_words_dict)
+    current_card = random.choice(to_learn)
     print(current_card)
 
     canvas.itemconfig(card_title, text="French", fill="black")
@@ -30,6 +34,15 @@ def flip_card():
     canvas.itemconfig(card_title, text="English", fill="white")
     canvas.itemconfig(card_word, text=current_card["English"], fill="white")
     canvas.itemconfig(card_background, image=card_back_image)
+
+def is_known():
+    to_learn.remove(current_card)
+    print(len(to_learn))
+
+    data = pd.DataFrame(to_learn)
+    data.to_csv("data/words_to_learn.csv", index=False)
+
+    next_card()
 
 # ---------------------------- UI Build -------------------------------
 window = tk.Tk()
@@ -50,7 +63,7 @@ card_word = canvas.create_text(400, 263, text="", font=("Arial", 60, "bold"))
 canvas.grid(row=0, column=0, columnspan=2)
 
 right_image = tk.PhotoImage(file="images/right.png")
-right_button = tk.Button(image=right_image, highlightthickness=0, command=next_card)
+right_button = tk.Button(image=right_image, highlightthickness=0, command=is_known)
 right_button.grid(row=1, column=1, pady=20)
 
 wrong_image = tk.PhotoImage(file="images/wrong.png")
